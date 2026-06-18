@@ -144,6 +144,28 @@
             border-color: #667eea;
         }
 
+        .option-label.correct {
+            background: #e8f5e9;
+            border-color: #4caf50;
+        }
+
+        .option-label.correct .option-text::before {
+            content: '✓ ';
+            color: #4caf50;
+            font-weight: bold;
+        }
+
+        .option-label.wrong {
+            background: #ffebee;
+            border-color: #f44336;
+        }
+
+        .option-label.wrong .option-text::before {
+            content: '✗ ';
+            color: #f44336;
+            font-weight: bold;
+        }
+
         .option-label input[type="radio"] {
             margin-right: 12px;
             cursor: pointer;
@@ -156,9 +178,34 @@
             font-weight: bold;
         }
 
+        .option-label.answer-revealed input[type="radio"] {
+            pointer-events: none;
+        }
+
         .option-text {
             flex: 1;
             text-align: left;
+        }
+
+        .answer-feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .feedback-correct {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 2px solid #4caf50;
+        }
+
+        .feedback-wrong {
+            background: #ffebee;
+            color: #c62828;
+            border: 2px solid #f44336;
         }
 
         .button-group {
@@ -363,6 +410,17 @@
         let currentGrade = 0;
         let answers = [];
         let selectedAnswers = [];
+        let answerChecked = false;
+
+        // 배열 셔플 함수 (Fisher-Yates)
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
 
         // 데이터 로드
         fetch('questions.json')
@@ -377,10 +435,12 @@
             currentQuestionIndex = 0;
             selectedAnswers = [];
             answers = [];
+            answerChecked = false;
 
             // 선택한 학년의 문제 필터링
             const gradeQuestions = questions.filter(q => q.grade === grade);
-            questions = gradeQuestions;
+            // 문제 순서 랜덤으로 섞기
+            questions = shuffleArray(gradeQuestions);
 
             if (questions.length === 0) {
                 alert('해당 학년의 문제가 없습니다.');
@@ -408,14 +468,40 @@
                 return;
             }
 
+            answerChecked = false;
             const question = questions[currentQuestionIndex];
             document.getElementById('currentQuestion').textContent = currentQuestionIndex + 1;
-            document.getElementById('questionText').textContent = question.question;
+            
+            // 질문 텍스트 설정 (이미지 처리 포함)
+            const questionContainer = document.getElementById('questionText');
+            let questionText = question.question;
+            
+            // [이미지: 파일명] 패턴 찾기 및 처리
+            const imageMatch = questionText.match(/\[이미지:\s*(.+?)\]/);
+            if (imageMatch) {
+                const imageFile = imageMatch[1].trim();
+                const cleanQuestion = questionText.replace(/\[이미지:.+?\]\s*/, '').trim();
+                
+                questionContainer.innerHTML = `${cleanQuestion}<br><br><img src="${imageFile}" style="max-width: 100%; max-height: 300px; border-radius: 10px; margin: 20px 0;">`;
+            } else {
+                questionContainer.textContent = questionText;
+            }
+
+            // 선택지와 정답을 함께 셔플
+            const optionsWithIndex = question.options.map((option, index) => ({
+                text: option,
+                originalIndex: index
+            }));
+            const shuffledOptions = shuffleArray(optionsWithIndex);
+
+            // 새로운 정답 인덱스 찾기
+            const newCorrectIndex = shuffledOptions.findIndex(opt => opt.originalIndex === question.correct);
+            question.correctIndex = newCorrectIndex;
 
             const optionsContainer = document.getElementById('optionsContainer');
             optionsContainer.innerHTML = '';
 
-            question.options.forEach((option, index) => {
+            shuffledOptions.forEach((option, index) => {
                 const label = document.createElement('label');
                 label.className = 'option-label';
 
@@ -425,12 +511,12 @@
                 input.value = index;
                 input.onchange = () => {
                     selectedAnswers[currentQuestionIndex] = index;
-                    updateButtonState();
+                    checkAnswer();
                 };
 
                 const span = document.createElement('span');
                 span.className = 'option-text';
-                span.textContent = option;
+                span.textContent = option.text;
 
                 label.appendChild(input);
                 label.appendChild(span);
@@ -447,18 +533,47 @@
 
         function updateButtonState() {
             const nextBtn = document.getElementById('nextBtn');
-            const hasSelected = selectedAnswers[currentQuestionIndex] !== undefined;
-            nextBtn.disabled = !hasSelected;
+            nextBtn.textContent = currentQuestionIndex + 1 >= questions.length ? '결과 보기 ▶' : '다음 문제 ▶';
+            nextBtn.disabled = false;
+        }
+
+        function checkAnswer() {
+            const question = questions[currentQuestionIndex];
+            const selectedIndex = selectedAnswers[currentQuestionIndex];
+            const optionsContainer = document.getElementById('optionsContainer');
+            const optionLabels = optionsContainer.querySelectorAll('.option-label');
+
+            // 모든 선택지 비활성화
+            optionLabels.forEach(label => {
+                label.classList.add('answer-revealed');
+                const input = label.querySelector('input');
+                input.disabled = true;
+            });
+
+            // 정답 표시
+            optionLabels[question.correctIndex].classList.add('correct');
+
+            // 선택한 답이 틀렸으면 표시
+            if (selectedIndex !== question.correctIndex) {
+                optionLabels[selectedIndex].classList.add('wrong');
+            }
+
+            // 피드백 메시지 추가
+            const feedbackDiv = document.createElement('div');
+            feedbackDiv.className = selectedIndex === question.correctIndex ? 'answer-feedback feedback-correct' : 'answer-feedback feedback-wrong';
+            feedbackDiv.textContent = selectedIndex === question.correctIndex ? '✓ 정답입니다!' : '✗ 오답입니다';
+            optionsContainer.appendChild(feedbackDiv);
+
+            answerChecked = true;
+            updateButtonState();
         }
 
         function nextQuestion() {
-            if (selectedAnswers[currentQuestionIndex] !== undefined) {
-                currentQuestionIndex++;
-                if (currentQuestionIndex >= questions.length) {
-                    showResult();
-                } else {
-                    loadQuestion();
-                }
+            currentQuestionIndex++;
+            if (currentQuestionIndex >= questions.length) {
+                showResult();
+            } else {
+                loadQuestion();
             }
         }
 
@@ -468,6 +583,7 @@
             selectedAnswers = [];
             answers = [];
             questions = [];
+            answerChecked = false;
 
             // 화면 전환
             document.getElementById('mainScreen').style.display = 'block';
@@ -488,7 +604,7 @@
             // 정답 체크
             let correct = 0;
             questions.forEach((question, index) => {
-                if (selectedAnswers[index] === question.correct) {
+                if (selectedAnswers[index] === question.correctIndex) {
                     correct++;
                 }
             });

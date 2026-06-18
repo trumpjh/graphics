@@ -377,35 +377,59 @@
     "options": [
       "이미지를 확대하면 계단 현상(Aliasing)이 발생한다.",
       "점과 점을 연결하는 수학적 함수 계산식으로 이미지를 표현한다.",
-      "픽셀 기반의 래스터 방식이다.",
-      "인쇄 품질이 비트맵 방식보다 낮다.",
-      "파일 용량이 매우 크다."
+      "사진과 같은 복잡한 명암และ 사실적인 질감 표현에 가장 적합하다.",
+      "해상도가 높아질수록 파일의 용량이 기하급수적으로 커진다.",
+      "픽셀 하나하나에 색상 값이 저장되는 방식이다."
     ],
     "correct": 1
   },
   {
     "grade": 2,
-    "question": "포토샵과 같은 이미지 편집 프로그램에서 가장 많이 다루는 파일 형식은?",
+    "question": "웹이나 모바일 환경에서 투명 배경을 지원하며, 24비트 트루컬러와 무손실 압축을 지원하는 대표적인 이미지 파일 포맷은?",
     "options": [
-      "AI (Adobe Illustrator)",
-      "PSD (Photoshop Document)",
-      "PDF (Portable Document Format)",
-      "EPS (Encapsulated PostScript)",
-      "SVG (Scalable Vector Graphics)"
-    ],
-    "correct": 1
-  },
-  {
-    "grade": 2,
-    "question": "컴퓨터 그래픽스에서 원하지 않는 톱니 모양의 가장자리가 생기는 현상을 무엇이라 하는가?",
-    "options": [
-      "스무딩",
-      "블러링",
-      "에일리어싱 (Aliasing)",
-      "필터링",
-      "모핑"
+      "BMP",
+      "JPEG",
+      "PNG",
+      "GIF",
+      "TIFF"
     ],
     "correct": 2
+  },
+  {
+    "grade": 2,
+    "question": "3차원 그래픽스 프로세스 중 멀티가이드선이나 와이어프레임 모델에 조명, 질감(Texture), 음영 등을 적용하여 사실적인 최종 이미지를 만들어내는 단계를 무엇이라 하는가?",
+    "options": [
+      "모델링 (Modeling)",
+      "렌더링 (Rendering)",
+      "매핑 (Mapping)",
+      "리깅 (Rigging)",
+      "모션 캡처 (Motion Capture)"
+    ],
+    "correct": 1
+  },
+  {
+    "grade": 2,
+    "question": "디스플레이 화면의 선명도를 나타내는 단위로, 1인치 안에 들어가는 픽셀의 수를 의미하는 용어는?",
+    "options": [
+      "DPI (Dots Per Inch)",
+      "PPI (Pixels Per Inch)",
+      "LPI (Lines Per Inch)",
+      "FPS (Frames Per Second)",
+      "Hz (Hertz)"
+    ],
+    "correct": 1
+  },
+  {
+    "grade": 2,
+    "question": "모니터 등의 디스플레이 색상 영역(RGB)과 인쇄물의 색상 영역(CMYK)이 달라 모니터의 색상이 인쇄물과 일치하지 않는 문제를 해결하기 위해 시스템 전체의 색상을 표준화하는 작업은?",
+    "options": [
+      "캘리브레이션 (Calibration)",
+      "안티앨리어싱 (Anti-aliasing)",
+      "디더링 (Dithering)",
+      "인터레이싱 (Interlacing)",
+      "모핑 (Morphing)"
+    ],
+    "correct": 0
   },
   {
     "grade": 2,
@@ -465,7 +489,7 @@
       "플로터 (Plotter)",
       "3D 스캐너"
     ],
-    "correct": 3
+    "correct": 0
   },
   {
     "grade": 2,

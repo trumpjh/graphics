@@ -494,24 +494,46 @@
             }));
             const shuffledOptions = shuffleArray(optionsWithIndex);
 
-            // 새로운 정답 인덱스 찾기
-            const newCorrectIndex = shuffledOptions.findIndex(opt => opt.originalIndex === question.correct);
-            question.correctIndex = newCorrectIndex;
+            // 정답이 배열인지 단일 값인지 확인
+            const correctAnswers = Array.isArray(question.correct) ? question.correct : [question.correct];
+            
+            // 셔플된 옵션에서 정답 인덱스 찾기
+            const correctIndices = correctAnswers.map(correctAnswer => 
+                shuffledOptions.findIndex(opt => opt.originalIndex === correctAnswer)
+            );
+            question.correctIndices = correctIndices;
+            question.isMultipleAnswers = Array.isArray(question.correct) && question.correct.length > 1;
 
             const optionsContainer = document.getElementById('optionsContainer');
             optionsContainer.innerHTML = '';
+
+            // 초기화: 이전에 선택한 답이 없으면 빈 배열
+            if (!Array.isArray(selectedAnswers[currentQuestionIndex])) {
+                selectedAnswers[currentQuestionIndex] = [];
+            }
 
             shuffledOptions.forEach((option, index) => {
                 const label = document.createElement('label');
                 label.className = 'option-label';
 
                 const input = document.createElement('input');
-                input.type = 'radio';
-                input.name = 'option';
+                input.type = question.isMultipleAnswers ? 'checkbox' : 'radio';
+                input.name = question.isMultipleAnswers ? `option-${currentQuestionIndex}` : 'option';
                 input.value = index;
                 input.onchange = () => {
-                    selectedAnswers[currentQuestionIndex] = index;
-                    checkAnswer();
+                    if (question.isMultipleAnswers) {
+                        // 체크박스: 복수 선택
+                        if (input.checked) {
+                            if (!selectedAnswers[currentQuestionIndex].includes(index)) {
+                                selectedAnswers[currentQuestionIndex].push(index);
+                            }
+                        } else {
+                            selectedAnswers[currentQuestionIndex] = selectedAnswers[currentQuestionIndex].filter(i => i !== index);
+                        }
+                    } else {
+                        // 라디오: 단일 선택
+                        selectedAnswers[currentQuestionIndex] = [index];
+                    }
                 };
 
                 const span = document.createElement('span');
@@ -524,8 +546,11 @@
             });
 
             // 이전에 선택한 답 복원
-            if (selectedAnswers[currentQuestionIndex] !== undefined) {
-                document.querySelector(`input[value="${selectedAnswers[currentQuestionIndex]}"]`).checked = true;
+            if (Array.isArray(selectedAnswers[currentQuestionIndex]) && selectedAnswers[currentQuestionIndex].length > 0) {
+                selectedAnswers[currentQuestionIndex].forEach(selectedIndex => {
+                    const checkbox = document.querySelector(`input[value="${selectedIndex}"]`);
+                    if (checkbox) checkbox.checked = true;
+                });
             }
 
             updateButtonState();
@@ -539,7 +564,7 @@
 
         function checkAnswer() {
             const question = questions[currentQuestionIndex];
-            const selectedIndex = selectedAnswers[currentQuestionIndex];
+            const selectedIndices = selectedAnswers[currentQuestionIndex] || [];
             const optionsContainer = document.getElementById('optionsContainer');
             const optionLabels = optionsContainer.querySelectorAll('.option-label');
 
@@ -551,17 +576,36 @@
             });
 
             // 정답 표시
-            optionLabels[question.correctIndex].classList.add('correct');
+            question.correctIndices.forEach(correctIndex => {
+                optionLabels[correctIndex].classList.add('correct');
+            });
 
-            // 선택한 답이 틀렸으면 표시
-            if (selectedIndex !== question.correctIndex) {
-                optionLabels[selectedIndex].classList.add('wrong');
+            // 선택한 답과 정답 비교
+            let isCorrect = false;
+            
+            if (question.isMultipleAnswers) {
+                // 복수 정답: 정렬된 배열로 비교
+                const sortedSelected = selectedIndices.sort((a, b) => a - b);
+                const sortedCorrect = question.correctIndices.sort((a, b) => a - b);
+                isCorrect = sortedSelected.length === sortedCorrect.length && 
+                           sortedSelected.every((val, idx) => val === sortedCorrect[idx]);
+            } else {
+                // 단일 정답
+                isCorrect = selectedIndices.length === 1 && 
+                           selectedIndices[0] === question.correctIndices[0];
+            }
+
+            // 선택한 답이 정답이 아니면 표시
+            if (!isCorrect) {
+                selectedIndices.forEach(selectedIndex => {
+                    optionLabels[selectedIndex].classList.add('wrong');
+                });
             }
 
             // 피드백 메시지 추가
             const feedbackDiv = document.createElement('div');
-            feedbackDiv.className = selectedIndex === question.correctIndex ? 'answer-feedback feedback-correct' : 'answer-feedback feedback-wrong';
-            feedbackDiv.textContent = selectedIndex === question.correctIndex ? '✓ 정답입니다!' : '✗ 오답입니다';
+            feedbackDiv.className = isCorrect ? 'answer-feedback feedback-correct' : 'answer-feedback feedback-wrong';
+            feedbackDiv.textContent = isCorrect ? '✓ 정답입니다!' : '✗ 오답입니다';
             optionsContainer.appendChild(feedbackDiv);
 
             answerChecked = true;
@@ -604,7 +648,13 @@
             // 정답 체크
             let correct = 0;
             questions.forEach((question, index) => {
-                if (selectedAnswers[index] === question.correctIndex) {
+                const selectedIndices = (selectedAnswers[index] || []).sort((a, b) => a - b);
+                const correctIndices = (question.correctIndices || []).sort((a, b) => a - b);
+                
+                const isCorrect = selectedIndices.length === correctIndices.length && 
+                                 selectedIndices.every((val, idx) => val === correctIndices[idx]);
+                
+                if (isCorrect) {
                     correct++;
                 }
             });

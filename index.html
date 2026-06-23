@@ -534,6 +534,7 @@
                         // 라디오: 단일 선택
                         selectedAnswers[currentQuestionIndex] = [index];
                     }
+                    updateButtonState();
                 };
 
                 const span = document.createElement('span');
@@ -558,8 +559,15 @@
 
         function updateButtonState() {
             const nextBtn = document.getElementById('nextBtn');
-            nextBtn.textContent = currentQuestionIndex + 1 >= questions.length ? '결과 보기 ▶' : '다음 문제 ▶';
-            nextBtn.disabled = false;
+            const selectedCount = (selectedAnswers[currentQuestionIndex] || []).length;
+
+            if (!answerChecked) {
+                nextBtn.textContent = '정답 확인';
+                nextBtn.disabled = selectedCount === 0;
+            } else {
+                nextBtn.textContent = currentQuestionIndex + 1 >= questions.length ? '결과 보기 ▶' : '다음 문제 ▶';
+                nextBtn.disabled = false;
+            }
         }
 
         function checkAnswer() {
@@ -613,6 +621,16 @@
         }
 
         function nextQuestion() {
+            if (!answerChecked) {
+                const selectedCount = (selectedAnswers[currentQuestionIndex] || []).length;
+                if (selectedCount === 0) {
+                    alert('답을 선택한 후 정답 확인을 눌러주세요.');
+                    return;
+                }
+                checkAnswer();
+                return;
+            }
+
             currentQuestionIndex++;
             if (currentQuestionIndex >= questions.length) {
                 showResult();
